@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/api/vworld/coord", "destination": "/api/vworld-coord" },
+    { "source": "/api/vworld/zone", "destination": "/api/vworld-zone" },
+    { "source": "/api/vworld/area", "destination": "/api/vworld-area" },
+    { "source": "/api/juso", "destination": "/api/juso" },
+    { "source": "/api/landuse", "destination": "/api/landuse" },
+    { "source": "/api/landarea", "destination": "/api/landarea" }
+  ]
+}
