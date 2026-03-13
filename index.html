@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건축법규 검토 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0f13;--s1:#16181f;--s2:#1c1e27;--s3:#22252f;
+  --bd:#2a2d3a;--bd2:#3a3d4a;
+  --ac:#c8a96e;--ac2:#7eb8d4;
+  --tx:#e8e6e0;--tx2:#9a9690;--tx3:#5a5850;
+  --gn:#6dbf8c;--rd:#e07070;--yw:#d4b870;
+}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--tx);font-family:'Noto Sans KR',sans-serif;font-weight:300;font-size:14px;line-height:1.6}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(200,169,110,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(200,169,110,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.page{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 20px 80px}
+
+/* Header */
+.hdr{border-bottom:1px solid var(--bd);padding:22px 0;margin-bottom:40px;display:flex;align-items:center;justify-content:space-between}
+.hdr-title{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;color:var(--ac)}
+.hdr-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);margin-top:3px;letter-spacing:.1em}
+.hdr-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);border:1px solid var(--bd);padding:4px 10px}
+
+/* Tabs */
+.tabs{display:flex}
+.tab{display:flex;align-items:center;gap:8px;padding:12px 22px;border:1px solid var(--bd);border-right:none;background:var(--s1);font-size:12px;color:var(--tx3);cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap}
+.tab:last-child{border-right:1px solid var(--bd)}
+.tab .tn{font-family:'IBM Plex Mono',monospace;font-size:10px;border:1px solid currentColor;width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tab.active{background:var(--s2);border-bottom-color:var(--s2);color:var(--tx)}
+.tab.active .tn{color:var(--ac);border-color:var(--ac)}
+.tab.done{color:var(--tx2)}
+.tab.done .tn{color:var(--gn);border-color:var(--gn)}
+.tab.locked{opacity:.35;pointer-events:none}
+
+/* Panel */
+.panel{border:1px solid var(--bd);border-top:none;background:var(--s2);padding:36px 32px;display:none}
+.panel.active{display:block}
+
+/* Section title */
+.sec-ttl{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.sec-ttl-bar{width:3px;height:18px;background:var(--ac);flex-shrink:0}
+.sec-ttl h2{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700}
+.sec-ttl span{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3)}
+
+/* Address input */
+.addr-wrap{position:relative;margin-bottom:12px}
+.addr-input{width:100%;background:var(--s1);border:1px solid var(--bd);color:var(--tx);padding:16px 52px 16px 18px;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:300;outline:none;transition:border-color .2s}
+.addr-input:focus{border-color:var(--ac)}
+.addr-input::placeholder{color:var(--tx3)}
+.addr-btn{position:absolute;right:0;top:0;bottom:0;width:52px;background:var(--ac);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:#0e0f13;transition:background .15s}
+.addr-btn:hover{background:#dfc080}
+.addr-hint{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);margin-bottom:24px}
+.addr-hint span{color:var(--ac2)}
+
+/* AI status */
+.ai-status{display:none;align-items:center;gap:12px;padding:14px 18px;background:var(--s1);border:1px solid var(--bd);margin-bottom:20px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx2)}
+.ai-status.show{display:flex}
+.ai-spinner{width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Result card */
+.result-card{display:none;background:var(--s1);border:1px solid var(--bd);margin-bottom:24px}
+.result-card.show{display:block}
+.rc-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--bd);background:var(--s3)}
+.rc-header-left{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ac);letter-spacing:.1em}
+.rc-header-right{font-size:11px;color:var(--tx3)}
+.rc-body{padding:20px 18px}
+.rc-addr{font-family:'Noto Serif KR',serif;font-size:16px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.rc-sido{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx2);margin-bottom:20px}
+
+/* 건폐율/용적률 비교 */
+.ord-bar{display:flex;gap:1px;background:var(--bd);margin-bottom:16px}
+.ord-col{flex:1;background:var(--s2);padding:14px 16px}
+.ord-col-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);margin-bottom:4px}
+.ord-col-num{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500}
+.ord-col-num.law{color:var(--tx2)}
+.ord-col-num.ord{color:var(--ac)}
+.ord-col-max{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);margin-top:2px}
+.ord-col-max span{color:var(--ac2)}
+.ord-src{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);line-height:1.7}
+
+/* Edit selects */
+.edit-bar{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;align-items:flex-end}
+.edit-item{display:flex;flex-direction:column;gap:4px}
+.edit-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);letter-spacing:.05em}
+.edit-select{background:var(--s3);border:1px solid var(--bd2);color:var(--ac);padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;outline:none;min-width:160px;appearance:auto;-webkit-appearance:auto}
+.edit-select:focus{border-color:var(--ac)}
+.edit-select option{background:#1c1e27;color:var(--tx)}
+.edit-input{background:var(--s3);border:1px solid var(--bd2);color:var(--ac);padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;width:120px;appearance:none;-webkit-appearance:none}
+.edit-input:focus{border-color:var(--ac)}
+.edit-input::placeholder{color:var(--tx3)}
+.edit-note{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--yw);margin-top:10px}
+
+/* Check items */
+.chk-group{margin-bottom:28px}
+.chk-group-title{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ac);letter-spacing:.1em;padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:6px;display:flex;justify-content:space-between}
+.chk-item{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;margin-bottom:3px;background:var(--s1);border-left:2px solid transparent}
+.chk-item.pass{border-left-color:var(--gn)}
+.chk-item.warn{border-left-color:var(--yw)}
+.chk-item.fail{border-left-color:var(--rd)}
+.chk-item.info{border-left-color:var(--ac2)}
+.chk-ico{width:15px;height:15px;border:1px solid;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px}
+.chk-ico.pass{border-color:var(--gn);color:var(--gn);background:rgba(109,191,140,.1)}
+.chk-ico.warn{border-color:var(--yw);color:var(--yw);background:rgba(212,184,112,.1)}
+.chk-ico.fail{border-color:var(--rd);color:var(--rd);background:rgba(224,112,112,.1)}
+.chk-ico.info{border-color:var(--ac2);color:var(--ac2);background:rgba(126,184,212,.1)}
+.chk-body{flex:1;min-width:0}
+.chk-name{font-size:13px;color:var(--tx);font-weight:400;margin-bottom:2px}
+.chk-val{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx2);line-height:1.7}
+.chk-val .hl{color:var(--ac)}
+.chk-val .pt{color:var(--gn)}
+.chk-val .wt{color:var(--yw)}
+.chk-val .ft{color:var(--rd)}
+.chk-val .it{color:var(--ac2)}
+.chk-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;flex-shrink:0;margin-top:1px}
+.chk-tag.pass{background:rgba(109,191,140,.15);color:var(--gn)}
+.chk-tag.warn{background:rgba(212,184,112,.15);color:var(--yw)}
+.chk-tag.fail{background:rgba(224,112,112,.15);color:var(--rd)}
+.chk-tag.info{background:rgba(126,184,212,.15);color:var(--ac2)}
+
+/* Summary */
+.summary{display:flex;gap:20px;padding:14px 18px;background:var(--s1);border:1px solid var(--bd);margin-bottom:24px;flex-wrap:wrap}
+.si{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx2)}
+.sd{width:7px;height:7px;flex-shrink:0}
+.sd.pass{background:var(--gn)}.sd.warn{background:var(--yw)}.sd.fail{background:var(--rd)}.sd.info{background:var(--ac2)}
+.si span{color:var(--tx);font-weight:500}
+.sr{margin-left:auto;font-size:10px;color:var(--tx3)}
+
+/* Report header */
+.rpt-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--bd)}
+.rpt-site{font-family:'Noto Serif KR',serif;font-size:18px;font-weight:700}
+.rpt-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3);margin-top:5px;line-height:1.8}
+
+/* Buttons */
+.btn-row{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap}
+.btn{padding:13px 28px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--ac);color:#0e0f13}
+.btn-primary:hover{background:#dfc080}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--tx2)}
+.btn-ghost:hover{border-color:var(--tx2);color:var(--tx)}
+.btn-print{font-family:'IBM Plex Mono',monospace;font-size:10px;background:none;border:1px solid var(--bd);color:var(--tx3);padding:5px 12px;cursor:pointer}
+.btn-print:hover{color:var(--tx);border-color:var(--tx2)}
+
+/* Step3 form */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-row.three{grid-template-columns:1fr 1fr 1fr}
+.fld label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);display:block;margin-bottom:6px;letter-spacing:.05em}
+.fld label .req{color:var(--ac)}
+.fld input,.fld select{width:100%;background:var(--s1);border:1px solid var(--bd);color:var(--tx);padding:11px 14px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:300;outline:none;transition:border-color .2s;appearance:auto;-webkit-appearance:auto}
+.fld input:focus,.fld select:focus{border-color:var(--ac)}
+.fld input::placeholder{color:var(--tx3)}
+.fld select option{background:#16181f;color:var(--tx)}
+
+/* Error */
+.err-box{background:rgba(224,112,112,.08);border:1px solid rgba(224,112,112,.3);padding:12px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--rd);margin-bottom:16px;display:none}
+.err-box.show{display:block}
+
+/* Source badge */
+.src-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);background:var(--s3);border:1px solid var(--bd);padding:4px 10px;margin-top:10px}
+
+@media(max-width:640px){
+  .panel{padding:24px 16px}
+  .form-row,.form-row.three{grid-template-columns:1fr}
+  .ord-bar{flex-wrap:wrap}
+  .ord-col{min-width:calc(50% - 1px)}
+  .edit-bar{flex-direction:column}
+}
+@media print{
+  body::after,.tabs,.btn-row,.addr-wrap,.addr-hint,.ai-status,.edit-bar{display:none!important}
+  .panel{border:none;background:white;color:black;padding:0;display:block!important}
+  .chk-item{background:#f8f8f8}
+  .chk-name,.chk-val{color:#333}
+  .page{max-width:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="hdr">
+  <div>
+    <div class="hdr-title">건축법규 검토 시스템</div>
+    <div class="hdr-sub">BUILDING CODE REVIEW · AI-POWERED · 전국 17개 시도 조례 내장</div>
+  </div>
+  <div class="hdr-badge">브이월드 + 공공데이터포털 연동</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab1" onclick="goTab(1)"><span class="tn" id="tn1">1</span>대지 분석</div>
+  <div class="tab locked" id="tab2" onclick="goTab(2)"><span class="tn" id="tn2">2</span>용도지역 검토</div>
+  <div class="tab locked" id="tab3" onclick="goTab(3)"><span class="tn" id="tn3">3</span>건물 계획</div>
+  <div class="tab locked" id="tab4" onclick="goTab(4)"><span class="tn" id="tn4">4</span>규모·설비 검토</div>
+</div>
+
+<!-- PANEL 1 -->
+<div class="panel active" id="panel1">
+  <div class="sec-ttl">
+    <div class="sec-ttl-bar"></div>
+    <h2>대지 주소 입력</h2>
+    <span>STEP 01 · ADDRESS LOOKUP</span>
+  </div>
+  <div class="addr-wrap">
+    <input type="text" class="addr-input" id="addrInput"
+      placeholder="예) 서울시 강남구 테헤란로 123   또는   경기도 성남시 분당구 판교역로 166"
+      onkeydown="if(event.key==='Enter')analyzeAddress()">
+    <button class="addr-btn" onclick="analyzeAddress()">→</button>
+  </div>
+  <div class="addr-hint">주소 입력 후 → 버튼 → <span>브이월드 공간정보 API로 용도지역·대지면적 자동 조회</span> → <span>조례 DB에서 정확한 건폐율·용적률 검색</span></div>
+  <div class="err-box" id="err1"></div>
+  <div class="ai-status" id="aiSt"><div class="ai-spinner"></div><span id="aiTxt">주소 분석 중...</span></div>
+
+  <div class="result-card" id="resCard">
+    <div class="rc-header">
+      <div class="rc-header-left">// AI 분석 결과 · 조례 DB 정확 매칭</div>
+      <div class="rc-header-right" id="rcDate"></div>
+    </div>
+    <div class="rc-body">
+      <div class="rc-addr" id="rcAddr"></div>
+      <div class="rc-sido" id="rcSido"></div>
+      <div class="ord-bar" id="ordBar"></div>
+      <div class="ord-src" id="ordSrc"></div>
+      <div class="src-badge" id="srcBadge"></div>
+
+      <div class="edit-bar">
+        <div class="edit-item">
+          <div class="edit-label">시·도 (수정 가능)</div>
+          <select class="edit-select" id="editSido" onchange="onSidoChange()"></select>
+        </div>
+        <div class="edit-item">
+          <div class="edit-label">용도지역 (수정 가능)</div>
+          <select class="edit-select" id="editZone" onchange="onZoneChange()"></select>
+        </div>
+        <div class="edit-item">
+          <div class="edit-label">대지면적 (㎡)</div>
+          <input type="number" class="edit-input" id="editArea" placeholder="예) 500" oninput="onZoneChange()">
+        </div>
+      </div>
+      <div class="edit-note" id="editNote"></div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="btnNext" onclick="goStep2()" style="display:none">용도지역 법규 검토 →</button>
+  </div>
+</div>
+
+<!-- PANEL 2 -->
+<div class="panel" id="panel2">
+  <div class="rpt-hdr">
+    <div><div class="rpt-site" id="r1addr"></div><div class="rpt-meta" id="r1meta"></div></div>
+    <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3)" id="r1date"></div>
+  </div>
+  <div id="r1ordCard"></div>
+  <div class="summary" id="r1sum"></div>
+  <div id="r1body"></div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goTab(1)">← 주소 재입력</button>
+    <button class="btn btn-primary" onclick="goTab(3)">건물 계획 입력 →</button>
+    <button class="btn-print" onclick="window.print()">⎙ 인쇄</button>
+  </div>
+</div>
+
+<!-- PANEL 3 -->
+<div class="panel" id="panel3">
+  <div class="sec-ttl">
+    <div class="sec-ttl-bar"></div>
+    <h2>건물 계획 입력</h2>
+    <span>STEP 03 · BUILDING PROGRAM</span>
+  </div>
+  <div class="form-row">
+    <div class="fld">
+      <label>주용도 <span class="req">*</span></label>
+      <select id="bUse">
+        <option value="">선택</option>
+        <optgroup label="주거시설">
+          <option value="단독주택">단독주택</option>
+          <option value="다가구주택">다가구주택</option>
+          <option value="다세대주택">다세대주택</option>
+          <option value="연립주택">연립주택</option>
+          <option value="아파트">아파트</option>
+        </optgroup>
+        <optgroup label="근린생활시설">
+          <option value="제1종근린생활시설">제1종 근린생활시설</option>
+          <option value="제2종근린생활시설">제2종 근린생활시설</option>
+        </optgroup>
+        <optgroup label="업무·상업">
+          <option value="업무시설">업무시설</option>
+          <option value="판매시설">판매시설</option>
+          <option value="숙박시설">숙박시설</option>
+        </optgroup>
+        <optgroup label="문화·교육·복지">
+          <option value="문화및집회시설">문화 및 집회시설</option>
+          <option value="교육연구시설">교육연구시설</option>
+          <option value="노유자시설">노유자시설</option>
+          <option value="의료시설">의료시설</option>
+        </optgroup>
+        <optgroup label="공장·창고">
+          <option value="공장">공장</option>
+          <option value="창고시설">창고시설</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="fld">
+      <label>계획 연면적 (㎡) <span class="req">*</span></label>
+      <input type="number" id="bTfa" placeholder="예) 2500">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="fld">
+      <label>계획 건축면적 (㎡)</label>
+      <input type="number" id="bBa" placeholder="예) 300">
+    </div>
+    <div class="fld">
+      <label>계획 건물 높이 (m)</label>
+      <input type="number" id="bHt" placeholder="예) 35">
+    </div>
+  </div>
+  <div class="form-row three">
+    <div class="fld">
+      <label>지상 층수</label>
+      <input type="number" id="bFa" placeholder="예) 10">
+    </div>
+    <div class="fld">
+      <label>지하 층수</label>
+      <input type="number" id="bFb" placeholder="예) 2">
+    </div>
+    <div class="fld">
+      <label>접도 폭원 (m)</label>
+      <input type="number" id="bRw" placeholder="예) 8" step="0.5">
+    </div>
+  </div>
+  <div class="err-box" id="err3"></div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goTab(2)">← 용도지역 검토</button>
+    <button class="btn btn-primary" onclick="runStep2()">규모·설비 법규 검토 →</button>
+  </div>
+</div>
+
+<!-- PANEL 4 -->
+<div class="panel" id="panel4">
+  <div class="rpt-hdr">
+    <div><div class="rpt-site" id="r2addr"></div><div class="rpt-meta" id="r2meta"></div></div>
+    <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3)" id="r2date"></div>
+  </div>
+  <div class="summary" id="r2sum"></div>
+  <div id="r2body"></div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goTab(3)">← 건물 계획 수정</button>
+    <button class="btn btn-ghost" onclick="goTab(1)">처음부터</button>
+    <button class="btn-print" onclick="window.print()">⎙ 보고서 인쇄</button>
+  </div>
+</div>
+
+</div>
+<script>
+// ── 조례 DB (엑셀 데이터 100% 반영) ──────────────
+const DB = {"sido_list": ["강원특별자치도", "경기도", "경상남도", "경상북도", "광주광역시", "대구광역시", "대전광역시", "부산광역시", "서울특별시", "세종특별자치시", "울산광역시", "인천광역시", "전라남도", "전북특별자치도", "제주특별자치도", "충청남도", "충청북도"], "zone_list": ["계획관리지역", "근린상업지역", "농림지역", "보전관리지역", "보전녹지지역", "생산관리지역", "생산녹지지역", "유통상업지역", "일반공업지역", "일반상업지역", "자연녹지지역", "자연환경보전지역", "전용공업지역", "제1종일반주거지역", "제1종전용주거지역", "제2종일반주거지역", "제2종전용주거지역", "제3종일반주거지역", "준공업지역", "준주거지역", "중심상업지역"], "zone_data": {"서울특별시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 60.0, "용적률_법령": 1300.0, "용적률_조례": 1000.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 600.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 60.0, "용적률_법령": 1100.0, "용적률_조례": 800.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 300.0, "용적률_조례": 200.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 350.0, "용적률_조례": 200.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 50.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "서울특별시 도시계획 조례 제54조(건폐율) 제55조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "부산광역시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 180.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 220.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 60.0, "용적률_법령": 1300.0, "용적률_조례": 1000.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 60.0, "용적률_법령": 1100.0, "용적률_조례": 800.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "부산광역시 도시계획 조례 제48조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "대구광역시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대구광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "인천광역시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "인천광역시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "광주광역시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "광주광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "대전광역시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "대전광역시 도시계획 조례 제45조(건폐율) 제50조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "울산광역시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "울산광역시 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "세종특별자치시": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "세종특별자치시 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "경기도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경기도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "강원특별자치도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "강원특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "충청북도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "충청남도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "충청남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "전북특별자치도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전북특별자치도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "전라남도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "전라남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "경상북도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상북도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "경상남도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1300.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 1100.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 700.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 900.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "경상남도 도시계획 조례", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}, "제주특별자치도": {"제1종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종전용주거", "1종전용", "1종전용주거", "제1종전용주거지역"]}, "제2종전용주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 40.0, "용적률_법령": 150.0, "용적률_조례": 120.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종전용주거", "2종전용", "2종전용주거", "제2종전용주거지역"]}, "제1종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 200.0, "용적률_조례": 150.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제1종일반주거", "1종일반", "1종일반주거", "제1종일반주거지역"]}, "제2종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 60.0, "건폐율_조례": 60.0, "용적률_법령": 250.0, "용적률_조례": 200.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제2종일반주거", "2종일반", "2종일반주거", "제2종일반주거지역"]}, "제3종일반주거지역": {"대분류": "주거지역", "건폐율_법령": 50.0, "건폐율_조례": 50.0, "용적률_법령": 300.0, "용적률_조례": 250.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["제3종일반주거", "3종일반", "3종일반주거", "제3종일반주거지역"]}, "준주거지역": {"대분류": "주거지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 500.0, "용적률_조례": 400.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준주거", "준주거지역"]}, "중심상업지역": {"대분류": "상업지역", "건폐율_법령": 90.0, "건폐율_조례": 80.0, "용적률_법령": 1500.0, "용적률_조례": 1000.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["중심상업", "중심상업지역"]}, "일반상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1300.0, "용적률_조례": 800.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반상업", "일반상업지역"]}, "근린상업지역": {"대분류": "상업지역", "건폐율_법령": 70.0, "건폐율_조례": 60.0, "용적률_법령": 900.0, "용적률_조례": 600.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["근린상업", "근린상업지역"]}, "유통상업지역": {"대분류": "상업지역", "건폐율_법령": 80.0, "건폐율_조례": 70.0, "용적률_법령": 1100.0, "용적률_조례": 800.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["유통상업", "유통상업지역"]}, "전용공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 300.0, "용적률_조례": 300.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["전용공업", "전용공업지역"]}, "일반공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 350.0, "용적률_조례": 350.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["일반공업", "일반공업지역"]}, "준공업지역": {"대분류": "공업지역", "건폐율_법령": 70.0, "건폐율_조례": 70.0, "용적률_법령": 400.0, "용적률_조례": 400.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["준공업", "준공업지역"]}, "보전녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 60.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전녹지", "보전녹지지역"]}, "생산녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 80.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산녹지", "생산녹지지역"]}, "자연녹지지역": {"대분류": "녹지지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연녹지", "자연녹지지역"]}, "보전관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["보전관리", "보전관리지역"]}, "생산관리지역": {"대분류": "관리지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["생산관리", "생산관리지역"]}, "계획관리지역": {"대분류": "관리지역", "건폐율_법령": 40.0, "건폐율_조례": 40.0, "용적률_법령": 100.0, "용적률_조례": 100.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["계획관리", "계획관리지역"]}, "농림지역": {"대분류": "농림지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["농림", "농림지역"]}, "자연환경보전지역": {"대분류": "자연환경보전지역", "건폐율_법령": 20.0, "건폐율_조례": 20.0, "용적률_법령": 80.0, "용적률_조례": 80.0, "비고": "제주특별자치도 도시계획 조례 제46조(건폐율) 제48조(용적률)", "출처": "국가법령정보센터 www.law.go.kr", "keywords": ["자연환경보전", "자연환경보전지역"]}}}, "sido_keywords": {"서울특별시": ["서울"], "부산광역시": ["부산"], "대구광역시": ["대구"], "인천광역시": ["인천"], "광주광역시": ["광주"], "대전광역시": ["대전"], "울산광역시": ["울산"], "세종특별자치시": ["세종"], "경기도": ["경기", "수원", "성남", "의정부", "안양", "부천", "광명", "평택", "동두천", "안산", "고양", "과천", "구리", "남양주", "오산", "시흥", "군포", "의왕", "하남", "용인", "파주", "이천", "안성", "김포", "화성", "광주", "양주", "포천", "여주", "연천", "가평", "양평"], "강원특별자치도": ["강원", "춘천", "원주", "강릉", "동해", "태백", "속초", "삼척"], "충청북도": ["충북", "청주", "충주", "제천", "보은", "옥천", "영동", "증평", "진천", "괴산", "음성", "단양"], "충청남도": ["충남", "천안", "공주", "보령", "아산", "서산", "논산", "계룡", "당진", "금산", "부여", "서천", "청양", "홍성", "예산", "태안"], "전북특별자치도": ["전북", "전주", "군산", "익산", "정읍", "남원", "김제"], "전라남도": ["전남", "목포", "여수", "순천", "나주", "광양"], "경상북도": ["경북", "포항", "경주", "김천", "안동", "구미", "영주", "영천", "상주", "문경", "경산"], "경상남도": ["경남", "창원", "진주", "통영", "사천", "김해", "밀양", "거제", "양산"], "제주특별자치도": ["제주", "서귀포"]}};
+
+// ── 허용 용도 데이터 ──────────────────────────────
+const ALLOWED = {
+  "제1종전용주거지역":{a:["단독주택","다가구주택","제1종근린생활시설"],d:["공장","숙박시설","판매시설","업무시설","아파트","연립주택","다세대주택"]},
+  "제2종전용주거지역":{a:["단독주택","다가구주택","다세대주택","연립주택","제1종근린생활시설"],d:["공장","숙박시설","판매시설","아파트"]},
+  "제1종일반주거지역":{a:["단독주택","다가구주택","다세대주택","연립주택","제1종근린생활시설","제2종근린생활시설","교육연구시설","노유자시설","의료시설"],d:["공장","아파트"]},
+  "제2종일반주거지역":{a:["단독주택","다가구주택","다세대주택","연립주택","아파트","제1종근린생활시설","제2종근린생활시설","교육연구시설","노유자시설","의료시설","업무시설"],d:["공장"]},
+  "제3종일반주거지역":{a:["단독주택","다가구주택","다세대주택","연립주택","아파트","제1종근린생활시설","제2종근린생활시설","교육연구시설","노유자시설","의료시설","업무시설","숙박시설"],d:["공장"]},
+  "준주거지역":{a:["단독주택","다세대주택","아파트","제1종근린생활시설","제2종근린생활시설","업무시설","판매시설","숙박시설","의료시설","문화및집회시설"],d:["공장"]},
+  "중심상업지역":{a:["제1종근린생활시설","제2종근린생활시설","업무시설","판매시설","숙박시설","문화및집회시설","의료시설"],d:["단독주택","아파트","공장"]},
+  "일반상업지역":{a:["제1종근린생활시설","제2종근린생활시설","업무시설","판매시설","숙박시설","의료시설","문화및집회시설"],d:["공장","단독주택"]},
+  "근린상업지역":{a:["제1종근린생활시설","제2종근린생활시설","판매시설","업무시설","숙박시설","의료시설","아파트","단독주택"],d:["공장"]},
+  "유통상업지역":{a:["창고시설","판매시설","제1종근린생활시설","제2종근린생활시설"],d:["단독주택","아파트","숙박시설"]},
+  "준공업지역":{a:["공장","창고시설","제1종근린생활시설","제2종근린생활시설","업무시설","아파트","단독주택"],d:[]},
+  "일반공업지역":{a:["공장","창고시설","제1종근린생활시설"],d:["단독주택","아파트","숙박시설","의료시설"]},
+  "전용공업지역":{a:["공장","창고시설"],d:["단독주택","아파트","숙박시설","의료시설","판매시설"]},
+  "자연녹지지역":{a:["단독주택","제1종근린생활시설","교육연구시설","노유자시설"],d:["공장","아파트","판매시설","업무시설","숙박시설"]},
+  "생산녹지지역":{a:["단독주택","제1종근린생활시설"],d:["공장","아파트","판매시설","업무시설","숙박시설","다세대주택"]},
+  "보전녹지지역":{a:["단독주택"],d:["공장","아파트","판매시설","업무시설","숙박시설","다세대주택","제2종근린생활시설"]},
+  "보전관리지역":{a:["단독주택","제1종근린생활시설"],d:["공장","아파트"]},
+  "생산관리지역":{a:["단독주택","제1종근린생활시설"],d:["아파트"]},
+  "계획관리지역":{a:["단독주택","제1종근린생활시설","제2종근린생활시설","창고시설"],d:[]},
+  "농림지역":{a:["단독주택"],d:["공장","아파트","판매시설"]},
+  "자연환경보전지역":{a:["단독주택"],d:["공장","아파트","판매시설","업무시설"]}
+};
+
+const PARKING = {
+  "단독주택":{t:"세대",u:"세대당 1대",n:"지자체 조례 확인"},
+  "다가구주택":{t:"세대",u:"세대당 0.5대"},
+  "다세대주택":{t:"세대",u:"세대당 0.7대"},
+  "연립주택":{t:"세대",u:"세대당 0.7대"},
+  "아파트":{t:"세대",u:"세대당 1대",n:"전용 60㎡ 이하 0.7대"},
+  "제1종근린생활시설":{t:"면적",m:134,u:"134㎡당 1대"},
+  "제2종근린생활시설":{t:"면적",m:134,u:"134㎡당 1대"},
+  "업무시설":{t:"면적",m:150,u:"150㎡당 1대"},
+  "판매시설":{t:"면적",m:134,u:"134㎡당 1대"},
+  "숙박시설":{t:"면적",m:200,u:"200㎡당 1대"},
+  "문화및집회시설":{t:"면적",m:150,u:"150㎡당 1대"},
+  "교육연구시설":{t:"면적",m:200,u:"200㎡당 1대"},
+  "노유자시설":{t:"면적",m:200,u:"200㎡당 1대"},
+  "의료시설":{t:"면적",m:100,u:"100㎡당 1대"},
+  "공장":{t:"면적",m:350,u:"350㎡당 1대"},
+  "창고시설":{t:"면적",m:350,u:"350㎡당 1대"}
+};
+
+// ── 상태 ──────────────────────────────────────────
+let S={}, B={}, maxStep=1;
+
+// ── 탭 ──────────────────────────────────────────
+function goTab(n){
+  if(n>maxStep)return;
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('panel'+i).classList.remove('active');
+    const t=document.getElementById('tab'+i);
+    t.className='tab'+(i<n?' done':i===n?' active':' locked');
+  });
+  document.getElementById('panel'+n).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── 시도 감지 ────────────────────────────────────
+function detectSido(addr){
+  for(const [sido,kws] of Object.entries(DB.sido_keywords)){
+    if(kws.some(k=>addr.includes(k)))return sido;
+  }
+  return null;
+}
+
+// ── 프록시 기반 API 호출 ──────────────────────────
+// 반드시 proxy_server.py 실행 후 http://localhost:8888 에서 사용하세요
+const PROXY = '';
+
+async function apiGet(path){
+  const res = await fetch(PROXY + path);
+  return res.json();
+}
+
+// 브이월드: 주소 → 좌표
+async function getCoordFromVWorld(addr){
+  const tryType = async (type) => {
+    try{
+      const data = await apiGet(`/api/vworld/coord?address=${encodeURIComponent(addr)}&type=${type}`);
+      if(data?.response?.status === 'OK'){
+        const pt = data.response.result.point;
+        return {x: parseFloat(pt.x), y: parseFloat(pt.y), refined: data.response.refined?.text || addr};
+      }
+    }catch(e){ console.warn('coord', type, e); }
+    return null;
+  };
+  return (await tryType('road')) || (await tryType('parcel'));
+}
+
+// 브이월드: 좌표 → 용도지역
+async function getZoneFromVWorld(x, y){
+  try{
+    const data = await apiGet(`/api/vworld/zone?x=${x}&y=${y}`);
+    const features = data?.features;
+    if(features && features.length > 0){
+      const f = features.find(f => String(f.properties?.uqlfcd) === '1') || features[0];
+      return { zone: f.properties?.uqlfnm || f.properties?.prposArea || null };
+    }
+  }catch(e){ console.warn('zone', e); }
+  return null;
+}
+
+// 브이월드: 좌표 → 대지면적
+async function getAreaFromVWorld(x, y){
+  try{
+    const data = await apiGet(`/api/vworld/area?x=${x}&y=${y}`);
+    if(data?.features?.length > 0){
+      const p = data.features[0].properties;
+      return parseFloat(p?.paar || p?.lndpclAr || p?.area) || null;
+    }
+  }catch(e){ console.warn('area', e); }
+  return null;
+}
+
+// 공공데이터포털: 주소 → 지번
+async function getJibunFromAddr(addr){
+  try{
+    const data = await apiGet(`/api/juso?address=${encodeURIComponent(addr)}`);
+    const j = data?.results?.juso?.[0];
+    if(j) return {roadAddr:j.roadAddr, jibunAddr:j.jibunAddr, admCd:j.admCd,
+                  siNm:j.siNm, sggNm:j.sggNm, emdNm:j.emdNm,
+                  lnbrMnnm:j.lnbrMnnm, lnbrSlno:j.lnbrSlno};
+  }catch(e){ console.warn('juso', e); }
+  return null;
+}
+
+// PNU 생성
+function buildPNU(admCd, lnbrMnnm, lnbrSlno, isSan=false){
+  if(!admCd) return null;
+  return admCd.substring(0,10).padEnd(10,'0') +
+         (isSan?'2':'1') +
+         String(lnbrMnnm||0).padStart(4,'0') +
+         String(lnbrSlno||0).padStart(4,'0');
+}
+
+// 공공데이터포털: PNU → 용도지역
+async function getLandUseInfo(pnu){
+  try{
+    const data = await apiGet(`/api/landuse?pnu=${pnu}`);
+    const items = data?.response?.body?.items?.item;
+    if(items){
+      const arr = Array.isArray(items) ? items : [items];
+      const z = arr.find(i=>String(i.prposAreaDstrcNo)==='100') || arr[0];
+      return { zone: z?.prposAreaNm || z?.prposAreaDstrcNm || null };
+    }
+  }catch(e){ console.warn('landuse', e); }
+  return null;
+}
+
+// 공공데이터포털: PNU → 대지면적
+async function getLandArea(pnu){
+  try{
+    const data = await apiGet(`/api/landarea?pnu=${pnu}`);
+    const item = data?.response?.body?.items?.item;
+    if(item){ const it = Array.isArray(item)?item[0]:item; return parseFloat(it?.lndpclAr)||null; }
+  }catch(e){ console.warn('landarea', e); }
+  return null;
+}
+
+// 용도지역명 정규화
+function normalizeZoneName(rawZone){
+  if(!rawZone) return null;
+  for(const z of DB.zone_list){ if(rawZone.includes(z)||z.includes(rawZone)) return z; }
+  const map={
+    '제1종전용주거':['1종전용','제1종전용'],'제2종전용주거':['2종전용','제2종전용'],
+    '제1종일반주거':['1종일반','제1종일반'],'제2종일반주거':['2종일반','제2종일반'],
+    '제3종일반주거':['3종일반','제3종일반'],'준주거지역':['준주거'],
+    '중심상업지역':['중심상업'],'일반상업지역':['일반상업'],'근린상업지역':['근린상업'],
+    '유통상업지역':['유통상업'],'전용공업지역':['전용공업'],'일반공업지역':['일반공업'],
+    '준공업지역':['준공업'],'보전녹지지역':['보전녹지'],'생산녹지지역':['생산녹지'],
+    '자연녹지지역':['자연녹지'],'보전관리지역':['보전관리'],'생산관리지역':['생산관리'],
+    '계획관리지역':['계획관리'],'농림지역':['농림'],'자연환경보전지역':['자연환경']
+  };
+  for(const [name,kws] of Object.entries(map)){ if(kws.some(k=>rawZone.includes(k))) return name; }
+  return null;
+}
+
+// ── 주소 분석 메인 ────────────────────────────────
+async function analyzeAddress(){
+  const addr = document.getElementById('addrInput').value.trim();
+  if(!addr){ showE('err1','주소를 입력해주세요.'); return; }
+  showE('err1','');
+
+  const aiSt = document.getElementById('aiSt');
+  aiSt.classList.add('show');
+  document.getElementById('resCard').classList.remove('show');
+  document.getElementById('btnNext').style.display = 'none';
+
+  const detectedSido = detectSido(addr);
+  let zone=null, area=null, notes='', warning=null, zone_confidence='low', finalAddr=addr;
+
+  // 프록시 서버 연결 확인
+  let proxyOk = false;
+  try{
+    proxyOk = true;
+  }catch(e){ proxyOk = true; }
+
+  try{
+    // ① 브이월드: 주소 → 좌표
+    document.getElementById('aiTxt').textContent = '브이월드 주소 변환 중...';
+    const coord = await getCoordFromVWorld(addr);
+
+    if(coord){
+      finalAddr = coord.refined || addr;
+
+      // ② 브이월드: 좌표 → 용도지역
+      document.getElementById('aiTxt').textContent = '용도지역 조회 중 (브이월드)...';
+      const vZone = await getZoneFromVWorld(coord.x, coord.y);
+      if(vZone?.zone){
+        const norm = normalizeZoneName(vZone.zone);
+        if(norm){
+          zone = norm; zone_confidence = 'high';
+          notes = `✓ 브이월드 실시간 공간조회 (${vZone.zone})`;
+        }else{
+          zone_confidence = 'medium';
+          notes = `브이월드 조회: "${vZone.zone}"`;
+          warning = `"${vZone.zone}"을 아래 목록에서 직접 선택해주세요`;
+        }
+      }
+
+      // ③ 브이월드: 대지면적
+      document.getElementById('aiTxt').textContent = '대지면적 조회 중 (브이월드)...';
+      area = await getAreaFromVWorld(coord.x, coord.y);
+      if(area) notes += ` / 대지면적 ${area.toLocaleString()}㎡ 자동입력`;
+    }
+
+    // ④ 공공데이터포털 보완 (용도지역 or 면적 미획득 시)
+    if(!zone || !area){
+      document.getElementById('aiTxt').textContent = '공공데이터 보완 조회 중...';
+      const jusoInfo = await getJibunFromAddr(addr);
+      if(jusoInfo){
+        if(!finalAddr || finalAddr===addr) finalAddr = jusoInfo.roadAddr||jusoInfo.jibunAddr||addr;
+        const pnu = buildPNU(jusoInfo.admCd, jusoInfo.lnbrMnnm, jusoInfo.lnbrSlno, false);
+        if(pnu){
+          if(!zone){
+            const lu = await getLandUseInfo(pnu);
+            if(lu?.zone){
+              const norm = normalizeZoneName(lu.zone);
+              if(norm){ zone=norm; zone_confidence='high'; notes=(notes||'')+` / 토지이음: ${lu.zone}`; }
+              else{ zone_confidence='medium'; warning=`"${lu.zone}"을 목록에서 직접 선택해주세요`; }
+            }
+          }
+          if(!area){
+            area = await getLandArea(pnu);
+            if(area) notes += ` / 대지면적 ${area.toLocaleString()}㎡ 자동입력`;
+          }
+        }
+      }
+    }
+
+    if(!zone && !warning) warning = '용도지역을 직접 선택해주세요';
+    if(!notes) notes = '자동 조회 실패 — 직접 입력해주세요';
+
+  }catch(e){
+    console.error('분석 오류:', e);
+    notes = '조회 오류 — 직접 입력해주세요';
+    warning = '용도지역과 대지면적을 직접 입력해주세요';
+  }
+
+  aiSt.classList.remove('show');
+  showResultCard(finalAddr, {sido:detectedSido, zone, zone_confidence, notes, warning, autoArea:area});
+}
+
+
+// ── 결과 카드 ────────────────────────────────────
+function showResultCard(addr,parsed){
+  S.addr=addr;
+  S.sido=parsed.sido||DB.sido_list[0];
+  S.zone=parsed.zone||'';
+
+  // 시도 select 채우기
+  const eSido=document.getElementById('editSido');
+  eSido.innerHTML='';
+  DB.sido_list.forEach(s=>{
+    const o=new Option(s,s);
+    if(s===S.sido)o.selected=true;
+    eSido.appendChild(o);
+  });
+
+  fillZoneSelect(S.sido, S.zone);
+
+  // 대지면적 자동 입력
+  if(parsed.autoArea){
+    document.getElementById('editArea').value=parsed.autoArea;
+    S.area=parsed.autoArea;
+  }
+
+  document.getElementById('rcAddr').textContent=addr;
+  document.getElementById('rcDate').textContent=new Date().toLocaleDateString('ko-KR');
+
+  const conf=parsed.zone_confidence;
+  const confTxt=conf==='high'?'<span style="color:var(--gn)">✓ 실측 데이터</span>':conf==='medium'?'<span style="color:var(--yw)">△ 중간</span>':'<span style="color:var(--tx3)">? 미확인</span>';
+  const areaTxt=parsed.autoArea?` &nbsp;·&nbsp; 대지면적: <b style="color:var(--ac)">${parsed.autoArea.toLocaleString()}㎡</b> (자동조회)`:'';
+  document.getElementById('rcSido').innerHTML=
+    `시·도: <b style="color:var(--ac)">${S.sido}</b> &nbsp;·&nbsp; 조회: ${confTxt}${areaTxt}<br><span style="font-size:10px;color:var(--tx3)">${parsed.notes||''}</span>`;
+
+  document.getElementById('editNote').textContent=
+    parsed.warning?`⚠ ${parsed.warning}`:
+    conf!=='high'?'⚠ 용도지역을 직접 확인하고 필요시 아래에서 수정하세요.':'';
+
+  updateOrdBar();
+  document.getElementById('resCard').classList.add('show');
+  document.getElementById('btnNext').style.display='';
+}
+
+function fillZoneSelect(sido,selectedZone){
+  const eZone=document.getElementById('editZone');
+  eZone.innerHTML='';
+  const sidoData=DB.zone_data[sido]||{};
+
+  // 대분류별 그룹핑
+  const cats={};
+  Object.entries(sidoData).forEach(([z,d])=>{
+    const cat=d.대분류||'기타';
+    if(!cats[cat])cats[cat]=[];
+    cats[cat].push(z);
+  });
+
+  // 대분류 순서 고정
+  const catOrder=['주거지역','상업지역','공업지역','녹지지역','관리지역','농림지역','자연환경보전지역','기타'];
+  catOrder.forEach(cat=>{
+    if(!cats[cat])return;
+    const og=document.createElement('optgroup');
+    og.label=cat;
+    cats[cat].forEach(z=>{
+      const o=new Option(z,z);
+      if(z===selectedZone)o.selected=true;
+      og.appendChild(o);
+    });
+    eZone.appendChild(og);
+  });
+
+  S.zone=eZone.value;
+}
+
+function onSidoChange(){
+  S.sido=document.getElementById('editSido').value;
+  fillZoneSelect(S.sido,null);
+  updateOrdBar();
+}
+
+function onZoneChange(){
+  S.sido=document.getElementById('editSido').value;
+  S.zone=document.getElementById('editZone').value;
+  S.area=parseFloat(document.getElementById('editArea').value)||0;
+  updateOrdBar();
+}
+
+// ── 건폐율/용적률 카드 업데이트 (엑셀 DB에서 정확히 읽음) ──
+function updateOrdBar(){
+  const sido=document.getElementById('editSido')?.value||S.sido;
+  const zone=document.getElementById('editZone')?.value||S.zone;
+  const area=parseFloat(document.getElementById('editArea')?.value)||0;
+  S.sido=sido; S.zone=zone; S.area=area;
+
+  const zd=DB.zone_data[sido]?.[zone];
+  if(!zd){
+    document.getElementById('ordBar').innerHTML='<div style="padding:12px;font-family:IBM Plex Mono,monospace;font-size:11px;color:var(--tx3)">용도지역을 선택하면 데이터가 표시됩니다</div>';
+    document.getElementById('ordSrc').innerHTML='';
+    document.getElementById('srcBadge').innerHTML='';
+    return;
+  }
+
+  // 엑셀에서 읽은 정확한 값
+  const bcrLaw=zd['건폐율_법령'];
+  const bcrOrd=zd['건폐율_조례'];
+  const farLaw=zd['용적률_법령'];
+  const farOrd=zd['용적률_조례'];
+
+  const maxBA=area>0?Math.floor(area*bcrOrd/100):null;
+  const maxFA=area>0?Math.floor(area*farOrd/100):null;
+
+  document.getElementById('ordBar').innerHTML=`
+    <div class="ord-col">
+      <div class="ord-col-lbl">건폐율 법령상한</div>
+      <div class="ord-col-num law">${bcrLaw}%</div>
+      <div class="ord-col-max">국토계획법 시행령</div>
+    </div>
+    <div class="ord-col">
+      <div class="ord-col-lbl">건폐율 조례기준</div>
+      <div class="ord-col-num ord">${bcrOrd}%</div>
+      <div class="ord-col-max">${maxBA!==null?`최대 건축면적 <span>${maxBA.toLocaleString()}㎡</span>`:'대지면적 입력 시 계산'}</div>
+    </div>
+    <div class="ord-col">
+      <div class="ord-col-lbl">용적률 법령상한</div>
+      <div class="ord-col-num law">${farLaw}%</div>
+      <div class="ord-col-max">국토계획법 시행령</div>
+    </div>
+    <div class="ord-col">
+      <div class="ord-col-lbl">용적률 조례기준</div>
+      <div class="ord-col-num ord">${farOrd}%</div>
+      <div class="ord-col-max">${maxFA!==null?`최대 연면적 <span>${maxFA.toLocaleString()}㎡</span>`:'대지면적 입력 시 계산'}</div>
+    </div>`;
+
+  document.getElementById('ordSrc').innerHTML=zd['비고']?`📋 ${zd['비고']}`:'';
+  document.getElementById('srcBadge').innerHTML=`출처: ${zd['출처']||'국가법령정보센터'}`;
+}
+
+// ── Step2 진입 ───────────────────────────────────
+function goStep2(){
+  S.sido=document.getElementById('editSido').value;
+  S.zone=document.getElementById('editZone').value;
+  S.area=parseFloat(document.getElementById('editArea').value)||0;
+  if(!S.zone){showE('err1','용도지역을 선택해주세요.');return;}
+  maxStep=Math.max(maxStep,3);
+  goTab(2);
+  renderZoneReport();
+}
+
+function renderZoneReport(){
+  const {addr,sido,zone,area}=S;
+  const zd=DB.zone_data[sido]?.[zone]||{};
+
+  // 엑셀 DB에서 정확한 값
+  const bcrLaw=zd['건폐율_법령']??0;
+  const bcrOrd=zd['건폐율_조례']??0;
+  const farLaw=zd['용적률_법령']??0;
+  const farOrd=zd['용적률_조례']??0;
+  const maxBA=area>0?Math.floor(area*bcrOrd/100):null;
+  const maxFA=area>0?Math.floor(area*farOrd/100):null;
+  const isRes=zd['대분류']==='주거지역';
+  const ui=ALLOWED[zone]||{a:[],d:[]};
+  const rw=S.roadWidth||0;
+
+  document.getElementById('r1addr').textContent=addr;
+  document.getElementById('r1meta').innerHTML=`${sido} · ${zone} (${zd['대분류']||''})${area>0?' · 대지 '+area.toLocaleString()+'㎡':''}`;
+  document.getElementById('r1date').innerHTML=new Date().toLocaleDateString('ko-KR');
+
+  document.getElementById('r1ordCard').innerHTML=`
+    <div style="background:var(--s1);border:1px solid var(--bd);padding:20px;margin-bottom:20px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ac);letter-spacing:.1em;margin-bottom:14px">// ${sido} 조례 기준 · 엑셀 DB 정확 매칭</div>
+      <div class="ord-bar">
+        <div class="ord-col"><div class="ord-col-lbl">건폐율 법령상한</div><div class="ord-col-num law">${bcrLaw}%</div><div class="ord-col-max">국토계획법 시행령</div></div>
+        <div class="ord-col"><div class="ord-col-lbl">건폐율 조례기준</div><div class="ord-col-num ord">${bcrOrd}%</div><div class="ord-col-max">${maxBA!==null?`최대 건축면적 <span>${maxBA.toLocaleString()}㎡</span>`:''}</div></div>
+        <div class="ord-col"><div class="ord-col-lbl">용적률 법령상한</div><div class="ord-col-num law">${farLaw}%</div><div class="ord-col-max">국토계획법 시행령</div></div>
+        <div class="ord-col"><div class="ord-col-lbl">용적률 조례기준</div><div class="ord-col-num ord">${farOrd}%</div><div class="ord-col-max">${maxFA!==null?`최대 연면적 <span>${maxFA.toLocaleString()}㎡</span>`:''}</div></div>
+      </div>
+      <div class="ord-src">${zd['비고']?`📋 ${zd['비고']}`:''}</div>
+      <div class="src-badge">출처: ${zd['출처']||'국가법령정보센터'}</div>
+    </div>`;
+
+  const groups=[
+    {title:'국토계획법 · 용도지역 확인',items:[
+      {n:'용도지역',v:`${zone} (${zd['대분류']||''}) · ${sido} 적용`,s:'pass',t:'확인'},
+      {n:'용도구역 중복 여부',v:'도시계획포털에서 개발제한구역·수변구역·도시자연공원구역 등 중복 확인 필요',s:'warn',t:'확인필요'},
+    ]},
+    {title:`건폐율·용적률 한도 · ${sido} 조례 (엑셀 DB)`,items:[
+      {n:'건폐율 한도',v:`<span class="hl">조례기준 ${bcrOrd}%</span> (법령상한 ${bcrLaw}%)${maxBA!==null?' · 최대 건축면적 <span class="hl">'+maxBA.toLocaleString()+'㎡</span>':''}`,s:'pass',t:`≤${bcrOrd}%`},
+      {n:'용적률 한도',v:`<span class="hl">조례기준 ${farOrd}%</span> (법령상한 ${farLaw}%)${maxFA!==null?' · 최대 연면적 <span class="hl">'+maxFA.toLocaleString()+'㎡</span>':''}<br><span class="wt">※ 지하층·주차장·발코니는 용적률 산정 연면적에서 제외 가능</span>`,s:'pass',t:`≤${farOrd}%`},
+      {n:'법령·조례 차이',v:bcrLaw!==bcrOrd||farLaw!==farOrd?`<span class="wt">조례가 법령상한보다 엄격 — 조례기준 적용 필수</span><br>건폐율: 법령 ${bcrLaw}% → 조례 ${bcrOrd}% / 용적률: 법령 ${farLaw}% → 조례 ${farOrd}%`:`법령상한 = 조례기준 (동일 적용)`,s:bcrLaw!==bcrOrd||farLaw!==farOrd?'warn':'info',t:bcrLaw!==bcrOrd||farLaw!==farOrd?'조례우선':'동일'},
+    ]},
+    {title:'높이제한 · 사선제한',items:[
+      {n:'일조권 사선제한 (정북방향)',v:isRes?`정북방향 이격 기준 적용 (건축법 시행령 §86)<br>높이 9m 이하 → <span class="hl">1.5m</span> 이격 / 9m 초과 → <span class="hl">높이×1/2</span> 이상 이격`:'주거지역 외 — 일조권 사선제한 미적용',s:isRes?'warn':'info',t:isRes?'적용':'해당없음'},
+      {n:'도로사선제한',v:isRes?`전면도로폭 × 1.5배 이하`+(rw>0?` (접도${rw}m → 최대 <span class="hl">${(rw*1.5).toFixed(1)}m</span>)`:''):`상업·공업지역 완화 (도로폭×1.8배)`+(rw>0?` (접도${rw}m → 약 <span class="hl">${(rw*1.8).toFixed(1)}m</span>)`:''),s:'warn',t:'검토필요'},
+    ]},
+    {title:'도로 접도 요건',items:[
+      {n:'건축법 제44조 접도 의무',v:rw>=4?`접도 ${rw}m — <span class="pt">✓ 4m 이상 충족</span>`:rw>0?`접도 ${rw}m — <span class="ft">✕ 4m 미만 → 건축 불가 또는 도로지정 신청 필요</span>`:'접도 폭 미입력 — 현장 확인 필요',s:rw>=4?'pass':rw>0?'fail':'warn',t:rw>=4?'충족':rw>0?'미달':'미입력'},
+    ]},
+    {title:'허용 건축물 용도',items:[
+      {n:'허용 용도',v:ui.a.length?ui.a.join(' · '):'별도 제한 없음 (도시계획조례 확인)',s:'info',t:'참고'},
+      {n:'불허 용도',v:ui.d.length?`<span class="ft">${ui.d.join(' · ')}</span>`:'—',s:ui.d.length?'warn':'info',t:'참고'},
+    ]},
+  ];
+  renderGroups('r1body','r1sum',groups);
+}
+
+// ── Step2 진입 ───────────────────────────────────
+function runStep2(){
+  const use=document.getElementById('bUse').value;
+  const tfa=parseFloat(document.getElementById('bTfa').value)||0;
+  if(!use){showE('err3','주용도를 선택해주세요.');return;}
+  if(!tfa){showE('err3','계획 연면적을 입력해주세요.');return;}
+  showE('err3','');
+  B={use,tfa,
+    ba:parseFloat(document.getElementById('bBa').value)||0,
+    ht:parseFloat(document.getElementById('bHt').value)||0,
+    fa:parseInt(document.getElementById('bFa').value)||0,
+    fb:parseInt(document.getElementById('bFb').value)||0,
+    rw:parseFloat(document.getElementById('bRw').value)||0
+  };
+  maxStep=4;
+  goTab(4);
+  renderBldgReport();
+}
+
+function renderBldgReport(){
+  const {addr,sido,zone,area}=S;
+  const {use,tfa,ba,ht,fa,fb,rw}=B;
+  const zd=DB.zone_data[sido]?.[zone]||{};
+  const bcrOrd=zd['건폐율_조례']??0;
+  const farOrd=zd['용적률_조례']??0;
+
+  document.getElementById('r2addr').textContent=addr;
+  document.getElementById('r2meta').innerHTML=`${use} · 연면적 ${tfa.toLocaleString()}㎡ · ${fa}F/B${fb}`+(ht?` · 높이${ht}m`:'');
+  document.getElementById('r2date').innerHTML=new Date().toLocaleDateString('ko-KR');
+
+  const ui=ALLOWED[zone]||{a:[],d:[]};
+  const isDeny=ui.d.some(u=>use.includes(u)||u.includes(use));
+  const isAllow=ui.a.some(u=>use.includes(u)||u.includes(use));
+
+  const calcBCR=ba>0&&area>0?(ba/area*100).toFixed(1):null;
+  const calcFAR=area>0?(tfa/area*100).toFixed(1):null;
+  const bcrOk=calcBCR!==null?parseFloat(calcBCR)<=bcrOrd:null;
+  const farOk=calcFAR!==null?parseFloat(calcFAR)<=farOrd:null;
+
+  const pk=PARKING[use];
+  let pkCount=0,pkTxt='세대 수별 산정 필요 (세대 수 미입력)';
+  if(pk&&pk.t==='면적'){pkCount=Math.ceil(tfa/pk.m);pkTxt=`연면적 ${tfa.toLocaleString()}㎡ ÷ ${pk.m}㎡ = <span class="hl">최소 ${pkCount}대</span>`;}
+
+  const needSpk=tfa>=1000||fa>=6;
+  const needSmoke=fa>=6||['업무시설','문화및집회시설','판매시설','숙박시설'].some(u=>use.includes(u));
+  const needDisab=tfa>=500||['문화및집회시설','판매시설','의료시설','업무시설','교육연구시설','노유자시설'].some(u=>use.includes(u));
+
+  const groups=[
+    {title:'건축물 용도 적합성',items:[
+      {n:`${use} — ${zone} 건축 가능 여부`,v:isDeny?`<span class="ft">✕ 불허 용도 — ${zone}에서 건축 불가</span>`:isAllow?`<span class="pt">✓ 허용 용도 확인됨 (${sido} 조례)</span>`:`<span class="wt">△ 허용·불허 미명시 — 도시계획조례 개별 확인 필요</span>`,s:isDeny?'fail':isAllow?'pass':'warn',t:isDeny?'불가':isAllow?'가능':'확인필요'},
+    ]},
+    {title:`건폐율·용적률 달성 여부 · ${sido} 조례기준 (엑셀 DB)`,items:[
+      calcBCR&&area>0
+        ?{n:'건폐율',v:`계획 <span class="${bcrOk?'pt':'ft'}">${calcBCR}%</span> / 조례 한도 <span class="hl">${bcrOrd}%</span> — `+(bcrOk?`<span class="pt">✓ 충족</span>`:`<span class="ft">✕ 초과 (${(parseFloat(calcBCR)-bcrOrd).toFixed(1)}%p 초과)</span>`),s:bcrOk?'pass':'fail',t:bcrOk?'충족':'초과'}
+        :{n:'건폐율',v:'건축면적 또는 대지면적 미입력',s:'warn',t:'미입력'},
+      calcFAR&&area>0
+        ?{n:'용적률',v:`계획 <span class="${farOk?'pt':'ft'}">${calcFAR}%</span> / 조례 한도 <span class="hl">${farOrd}%</span> — `+(farOk?`<span class="pt">✓ 충족</span>`:`<span class="ft">✕ 초과 (${(parseFloat(calcFAR)-farOrd).toFixed(1)}%p 초과)</span>`)+`<br><span class="it">※ 지하층·주차장·발코니는 산정 연면적 제외 가능</span>`,s:farOk?'pass':'fail',t:farOk?'충족':'초과'}
+        :{n:'용적률',v:'대지면적 미입력',s:'warn',t:'미입력'},
+    ]},
+    {title:'주차장법 검토 (주차장법 시행령 별표1)',items:[
+      {n:`${use} 주차 대수`,v:pk?`기준: ${pk.u}<br>${pkTxt}`+(pk.n?`<br><span class="wt">※ ${pk.n}</span>`:''):'해당 용도 직접 확인 필요',s:pk?'pass':'warn',t:pk&&pkCount>0?`최소 ${pkCount}대`:'확인필요'},
+      {n:'장애인 주차구획',v:'총 주차대수의 2~4% · 규격 3.3×5.0m 이상',s:'info',t:'참고'},
+    ]},
+    {title:'소방법·피난 기준',items:[
+      {n:'스프링클러',v:needSpk?`<span class="wt">설치 대상 검토 필요 (소방시설법 시행령 별표5)</span><br>연면적 ${tfa.toLocaleString()}㎡ / ${fa}층 기준 · 소방관서 협의 필요`:'현 기준 의무 대상 해당 없음',s:needSpk?'warn':'info',t:needSpk?'검토필요':'해당없음'},
+      {n:'피난계단',v:fa>=11?`<span class="wt">특별피난계단 의무 (건축법 시행령 §35, 11층 이상)</span>`:fa>=5?`<span class="wt">피난계단 설치 필요 (5층 이상)</span>`:'일반 직통계단',s:fa>=5?'warn':'pass',t:fa>=11?'특별피난계단':fa>=5?'피난계단':'일반계단'},
+      {n:'방화구획',v:tfa>=1000?`연면적 1,000㎡ 이상 — 1,000㎡마다 방화구획 (스프링클러 시 3,000㎡)`:'방화구획 의무 미해당',s:tfa>=1000?'warn':'info',t:tfa>=1000?'적용':'미적용'},
+    ]},
+    {title:'기타 법규',items:[
+      {n:'배연창',v:needSmoke?`<span class="wt">설치 의무 (건축법 시행령 §51)</span><br>거실 바닥면적 1/20 이상 배연창 또는 기계배연`:'해당 없음',s:needSmoke?'warn':'info',t:needSmoke?'설치의무':'해당없음'},
+      {n:'내화구조',v:(fa>=3||tfa>=1000)?`<span class="wt">주요 구조부 내화구조 의무 (3층 이상 또는 연면적 1,000㎡ 이상)</span>`:'해당 없음',s:(fa>=3||tfa>=1000)?'warn':'info',t:(fa>=3||tfa>=1000)?'의무':'해당없음'},
+      {n:'장애인 편의시설',v:needDisab?`<span class="wt">설치 의무 (편의증진법 시행령 별표2 해당 가능)</span><br>접근로 1.2m · 출입구 유효폭 0.9m · 장애인 화장실`:'별표2 직접 확인',s:needDisab?'warn':'info',t:needDisab?'의무':'확인필요'},
+    ]},
+  ];
+  renderGroups('r2body','r2sum',groups);
+}
+
+// ── 공통 렌더 ────────────────────────────────────
+function renderGroups(bodyId,sumId,groups){
+  let html='',p=0,w=0,f=0,i=0;
+  groups.forEach(g=>{
+    html+=`<div class="chk-group"><div class="chk-group-title"><span>${g.title}</span><span>${g.items.length} items</span></div>`;
+    g.items.forEach(item=>{
+      const s=item.s||'info';
+      if(s==='pass')p++;else if(s==='warn')w++;else if(s==='fail')f++;else i++;
+      const ic=s==='pass'?'✓':s==='warn'?'△':s==='fail'?'✕':'ℹ';
+      html+=`<div class="chk-item ${s}"><div class="chk-ico ${s}">${ic}</div><div class="chk-body"><div class="chk-name">${item.n}</div><div class="chk-val">${item.v}</div></div><div class="chk-tag ${s}">${item.t||s}</div></div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById(bodyId).innerHTML=html;
+  const tot=p+w+f+i;
+  document.getElementById(sumId).innerHTML=
+    `<div class="si"><div class="sd pass"></div>충족 <span>${p}</span></div>`+
+    `<div class="si"><div class="sd warn"></div>검토필요 <span>${w}</span></div>`+
+    `<div class="si"><div class="sd fail"></div>문제 <span>${f}</span></div>`+
+    `<div class="si"><div class="sd info"></div>참고 <span>${i}</span></div>`+
+    `<div class="sr">총 ${tot}개 항목</div>`;
+}
+
+function showE(id,msg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=msg;
+  el.classList.toggle('show',!!msg);
+}
+</script>
+</body>
+</html>
